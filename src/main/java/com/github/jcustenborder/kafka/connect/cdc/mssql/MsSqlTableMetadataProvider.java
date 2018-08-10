@@ -59,7 +59,7 @@ class MsSqlTableMetadataProvider extends CachingTableMetadataProvider {
           "OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA+'.'+CONSTRAINT_NAME), 'IsPrimaryKey') = 1 AND " +
           "CONSTRAINT_SCHEMA = ? AND TABLE_NAME = ?";
   final static String COLUMN_DEFINITION_SQL =
-      "SELECT column_name, iif(is_nullable='YES', 1, 0) AS is_optional, data_type, " +
+      "SELECT column_name, CASE INFORMATION_SCHEMA.COLUMNS.IS_NULLABLE WHEN 'Yes' THEN 1 ELSE 0 END AS is_optional, data_type, " +
           "numeric_scale FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? " +
           "ORDER BY ORDINAL_POSITION";
 
@@ -170,7 +170,9 @@ class MsSqlTableMetadataProvider extends CachingTableMetadataProvider {
       case "float":
         builder = SchemaBuilder.float64();
         break;
-
+      case "timestamp":
+        builder = SchemaBuilder.bytes();
+        break;
       default:
         throw new DataException(
             String.format("Could not process (dataType = '%s', optional = %s, scale = %d) for %s.",
